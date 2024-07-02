@@ -50,7 +50,7 @@ public class AutoMessageSystem extends JavaPlugin {
     private AutoMessageUtils utils;
     
     /** The version of the plugin */
-    final private String Version = "1.0";
+    final private String Version = "1.0.1";
 	
     /** Whether the server is using Folia */
     private boolean isFolia = false;
@@ -162,8 +162,19 @@ public class AutoMessageSystem extends JavaPlugin {
             List<String> progressives_reverse = getConfig().getStringList(path + key + ".progressives-reverse");
             List<String> displays_time = getConfig().getStringList(path + key + ".displays-time");
             String frequency = getConfig().getString(path + key + ".frequency");
+            String enabled = getConfig().getString(path + key + ".enabled");
 
-            if (titles.isEmpty() || colors.isEmpty() || styles.isEmpty() || progressives.isEmpty() || progressives_reverse.isEmpty() || frequency == null || displays_time.isEmpty()) {
+            if (titles.isEmpty() || colors.isEmpty() || styles.isEmpty() || progressives.isEmpty() || progressives_reverse.isEmpty() || frequency == null || enabled == null || displays_time.isEmpty()) {
+                getLogger().info("The BossBar '" + key + "' is not configured correctly.");
+                continue;
+            }
+            
+            // Enabled check
+            if(enabled.equalsIgnoreCase("true") || enabled.equalsIgnoreCase("false")) {
+            	if(!Boolean.parseBoolean(enabled)) {
+            		continue;
+            	}
+            } else {
                 getLogger().info("The BossBar '" + key + "' is not configured correctly.");
                 continue;
             }
@@ -173,7 +184,7 @@ public class AutoMessageSystem extends JavaPlugin {
             List<BarStyle> styles_final = convertToBarStyles(styles,key);
             List<Boolean> progressives_final = convertToBooleans(progressives,key,"progressives");
             List<Boolean> progressives_reverse_final = convertToBooleans(progressives_reverse,key,"progressives-reverse");
-            List<Integer> displays_time_final = convertToIntegers(displays_time,key,"displays-time");
+            List<Integer> displays_time_final = convertToIntegers(displays_time,key,"displays-time","BossBar");
             if(colors_final == null || styles_final == null || progressives_final == null || progressives_reverse_final == null || displays_time_final == null) {
                 getLogger().info("The BossBar '" + key + "' is not configured correctly.");
                 continue;
@@ -203,17 +214,28 @@ public class AutoMessageSystem extends JavaPlugin {
         	List<String> fades_in = plugin.getConfig().getStringList(path+key+".fades-in");
         	List<String> fades_out = plugin.getConfig().getStringList(path+key+".fades-out");
         	String frequency = plugin.getConfig().getString(path+key+".frequency");
-        	if(titless.isEmpty() || subtitles.isEmpty() || frequency == null || displays_time.isEmpty() || fades_in.isEmpty() || fades_out.isEmpty()) {
+        	String enabled = getConfig().getString(path + key + ".enabled");
+        	if(titless.isEmpty() || subtitles.isEmpty() || frequency == null || displays_time.isEmpty() || fades_in.isEmpty() || fades_out.isEmpty() || enabled == null) {
         		getLogger().info("The Title '"+key+"' is not configured correctly.");
         		continue;
         	}
         	
+            // Enabled check
+            if(enabled.equalsIgnoreCase("true") || enabled.equalsIgnoreCase("false")) {
+            	if(!Boolean.parseBoolean(enabled)) {
+            		continue;
+            	}
+            } else {
+                getLogger().info("The Title '" + key + "' is not configured correctly.");
+                continue;
+            }
+        	
         	// Conversion
-        	List<Integer> displays_time_final = convertToIntegers(displays_time,key,"displays-time");
-        	List<Integer> fades_in_final = convertToIntegers(fades_in,key,"fades-in");
-        	List<Integer> fades_out_final = convertToIntegers(fades_out,key,"fades-out");
+        	List<Integer> displays_time_final = convertToIntegers(displays_time,key,"displays-time","Title");
+        	List<Integer> fades_in_final = convertToIntegers(fades_in,key,"fades-in","Title");
+        	List<Integer> fades_out_final = convertToIntegers(fades_out,key,"fades-out","Title");
         	if(displays_time_final == null || fades_in_final == null || fades_out_final == null) {
-                getLogger().info("The BossBar '" + key + "' is not configured correctly.");
+                getLogger().info("The Title '" + key + "' is not configured correctly.");
                 continue;
         	}
         	
@@ -238,15 +260,26 @@ public class AutoMessageSystem extends JavaPlugin {
         	List<String> messages = plugin.getConfig().getStringList(path+key+".messages");
         	List<String> displays_time = plugin.getConfig().getStringList(path+key+".displays-time");
         	String frequency = plugin.getConfig().getString(path+key+".frequency");
-        	if(messages.isEmpty() || frequency == null || displays_time.isEmpty()) {
+        	String enabled = getConfig().getString(path + key + ".enabled");
+        	if(messages.isEmpty() || frequency == null || displays_time.isEmpty() || enabled == null) {
         		getLogger().info("The ActionBar '"+key+"' is not configured correctly.");
         		continue;
         	}
         	
+            // Enabled check
+            if(enabled.equalsIgnoreCase("true") || enabled.equalsIgnoreCase("false")) {
+            	if(!Boolean.parseBoolean(enabled)) {
+            		continue;
+            	}
+            } else {
+                getLogger().info("The ActionBar '" + key + "' is not configured correctly.");
+                continue;
+            }
+        	
         	// Conversion
-        	List<Integer> displays_time_final = convertToIntegers(displays_time,key,"displays-time");
+        	List<Integer> displays_time_final = convertToIntegers(displays_time,key,"displays-time","ActionBar");
         	if(displays_time_final == null) {
-                getLogger().info("The BossBar '" + key + "' is not configured correctly.");
+                getLogger().info("The ActionBar '" + key + "' is not configured correctly.");
                 continue;
         	}
         	
@@ -270,10 +303,22 @@ public class AutoMessageSystem extends JavaPlugin {
         for(String key : chats.getKeys(false)) {
         	List<String> message = plugin.getConfig().getStringList(path+key+".messages");
         	String frequency = plugin.getConfig().getString(path+key+".frequency");
-        	if(message == null || frequency == null) {
+        	String enabled = getConfig().getString(path + key + ".enabled");
+        	if(message == null || frequency == null || enabled == null) {
         		getLogger().info("The Chat '"+key+"' is not configured correctly.");
         		continue;
         	}
+        	
+            // Enabled check
+            if(enabled.equalsIgnoreCase("true") || enabled.equalsIgnoreCase("false")) {
+            	if(!Boolean.parseBoolean(enabled)) {
+            		continue;
+            	}
+            } else {
+                getLogger().info("The Chat '" + key + "' is not configured correctly.");
+                continue;
+            }
+        	
         	// Frequency check
         	int frequencySeconds = utils.convertTimeToSeconds(frequency);
         	if(frequencySeconds < 0) {
@@ -378,14 +423,14 @@ public class AutoMessageSystem extends JavaPlugin {
      * @param settingName The name of the setting used for logging purposes.
      * @return A list of Integer objects, or null if any integer string is invalid.
      */
-    private List<Integer> convertToIntegers(List<String> values, String key, String settingName) {
+    private List<Integer> convertToIntegers(List<String> values, String key, String settingName, String type) {
         List<Integer> list = new ArrayList<>();
         for (String value : values) {
             try {
                 Integer i = Integer.parseInt(value);
                 list.add(i);
             } catch (NumberFormatException e) {
-                getLogger().info("The BossBar '" + key + "' is not configured correctly. Bad setting for '" + settingName + "'.");
+                getLogger().info("The " + type + " '" + key + "' is not configured correctly. Bad setting for '" + settingName + "'.");
                 return null;
             }
         }

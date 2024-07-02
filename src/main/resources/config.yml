@@ -25,6 +25,7 @@ auto-messages:
   
   bossbars:
     bossbar-example:
+      enabled: true
       titles:
       - "§cThis is an example message!"
       - "§dThis is a second example message!"
@@ -58,6 +59,7 @@ auto-messages:
 
   titles:
     title-example:
+      enabled: true
       titles: 
       - "§cExample"
       - "§dSecond"
@@ -86,6 +88,7 @@ auto-messages:
       
   actionbars:
     actionbar-example:
+      enabled: true
       messages: 
       - "§cThis is an example message!"
       - "§dSecond message lol"
@@ -105,6 +108,7 @@ auto-messages:
       
   chats:
     chat-example:
+      enabled: true
       messages: 
       - "§cThis is an example message!"
       - "§dSecond message lol!"
