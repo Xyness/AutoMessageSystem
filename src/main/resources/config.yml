@@ -1,0 +1,111 @@
+# **********************
+# *  General settings  *
+# **********************
+
+# World where the auto-messages are disabled
+disabled-worlds:
+- example_world
+
+# Auto-messages setup
+# Placeholders supported with PlaceholderAPI
+auto-messages:
+
+
+  # **************
+  # *  BOSSBARS  *
+  # **************
+
+  # Settings for BossBars
+  # Available colors : BLUE, GREEN, PINK, PURPLE, RED, WHITE and YELLOW
+  # Available styles : SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20 and SOLID
+  # Progressive = if the bossbar progress increase/decrease
+  # Progressive-reverse = if true the bossbar progress will increase, false the bossbar progress will decrease
+  # Display-time is in seconds
+  # Frequency is in this format : 15s (for every 15 seconds), 15m (for every 15 minutes), 15h (for every 15 hours)..
+  
+  bossbars:
+    bossbar-example:
+      titles:
+      - "§cThis is an example message!"
+      - "§dThis is a second example message!"
+      colors: 
+      - RED
+      - BLUE
+      styles: 
+      - SEGMENTED_6
+      - SEGMENTED_20
+      progressives: 
+      - true
+      - true
+      progressives-reverse: 
+      - false
+      - true
+      displays-time: 
+      - 10
+      - 10
+      frequency: 15s
+      
+      
+  # ************
+  # *  TITLES  *
+  # ************
+      
+  # Settings for Titles
+  # Display-time is in seconds
+  # Fade-in is in ticks (1 second = 20 ticks)
+  # Fade-out is in ticks (1 second = 20 ticks)
+  # Frequency is in this format : 15s (for every 15 seconds), 15m (for every 15 minutes), 15h (for every 15 hours)..
+
+  titles:
+    title-example:
+      titles: 
+      - "§cExample"
+      - "§dSecond"
+      subtitles: 
+      - "§eThis is an example message!"
+      - "§bThis is the second message!"
+      displays-time:
+      - 10
+      - 5
+      fades-in:
+      - 5
+      - 1
+      fades-out:
+      - 5
+      - 1
+      frequency: 15s
+
+
+  # ****************
+  # *  ACTIONBARS  *
+  # ****************
+      
+  # Settings for ActionBars
+  # Display-time is in seconds
+  # Frequency is in this format : 15s (for every 15 seconds), 15m (for every 15 minutes), 15h (for every 15 hours)..
+      
+  actionbars:
+    actionbar-example:
+      messages: 
+      - "§cThis is an example message!"
+      - "§dSecond message lol"
+      displays-time: 
+      - 10
+      - 5
+      frequency: 15s
+      
+      
+  # ***********
+  # *  CHATS  *
+  # ***********
+      
+  # Settings for Chats
+  # You can use "\n" for a new line in the chat
+  # Frequency is in this format : 15s (for every 15 seconds), 15m (for every 15 minutes), 15h (for every 15 hours)..
+      
+  chats:
+    chat-example:
+      messages: 
+      - "§cThis is an example message!"
+      - "§dSecond message lol!"
+      frequency: 15s
