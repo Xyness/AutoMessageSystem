@@ -125,6 +125,8 @@ public class AutoMessageSystem extends JavaPlugin {
         saveDefaultConfig();
         reloadConfig();
         
+        // Check for updates
+        isUpdateAvailable = checkForUpdates();
         // Update the config if needed
         updateConfigWithDefaults();
         // Check if the server is running Folia
