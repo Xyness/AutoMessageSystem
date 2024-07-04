@@ -25,6 +25,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import fr.xyness.AMS.Commands.MainCommand;
 import fr.xyness.AMS.Listeners.ListenerMain;
+import fr.xyness.AMS.Support.bStatsHook;
 import fr.xyness.AMS.Types.ActionBarMessage;
 import fr.xyness.AMS.Types.BossBarMessage;
 import fr.xyness.AMS.Types.ChatMessage;
@@ -32,7 +33,7 @@ import fr.xyness.AMS.Types.TitleMessage;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 
 /**
- * Main classe to enable AutoMessageSystem
+ * Main class to enable AutoMessageSystem
  * This class provides some useful methods
  */
 public class AutoMessageSystem extends JavaPlugin {
@@ -49,8 +50,11 @@ public class AutoMessageSystem extends JavaPlugin {
     /** The AutoMessageUtils instance */
     private AutoMessageUtils utils;
     
+    /** Instance of ClaimbStats for bStats integration */
+    private bStatsHook bStatsInstance;
+    
     /** The version of the plugin */
-    final private String Version = "1.0.1";
+    final private String Version = "1.0.2";
 	
     /** Whether the server is using Folia */
     private boolean isFolia = false;
@@ -137,6 +141,9 @@ public class AutoMessageSystem extends JavaPlugin {
         	bukkitTasks.forEach(task -> task.cancel());
             scheduledTasks.forEach(task -> task.cancel());
             utils.clearData();
+        } else {
+        	bStatsInstance = new bStatsHook();
+        	bStatsInstance.enableMetrics(plugin);
         }
         
         // Check PlaceholderAPI

@@ -216,24 +216,32 @@ public class AutoMessageUtils {
      */
     public void startScheduler() {
         // Start scheduler for BossBars
-        bossBars.values().forEach(b -> {
-            instance.executeTimedAsync(() -> displayBossBar(b), b.getFrequency(), b.getFrequency() * 20, false);
-        });
+    	if(!bossBars.isEmpty()) {
+	        bossBars.values().forEach(b -> {
+	            instance.executeTimedAsync(() -> displayBossBar(b), b.getFrequency(), b.getFrequency() * 20, false);
+	        });
+    	}
 
         // Start scheduler for Titles
-        titles.values().forEach(t -> {
-            instance.executeTimedAsync(() -> displayTitle(t), t.getFrequency(), t.getFrequency() * 20, false);
-        });
+    	if(!titles.isEmpty()) {
+	        titles.values().forEach(t -> {
+	            instance.executeTimedAsync(() -> displayTitle(t), t.getFrequency(), t.getFrequency() * 20, false);
+	        });
+    	}
 
         // Start scheduler for ActionBars
-        actionBars.values().forEach(a -> {
-            instance.executeTimedAsync(() -> displayActionBar(a), a.getFrequency(), a.getFrequency() * 20, false);
-        });
+    	if(!actionBars.isEmpty()) {
+            actionBars.values().forEach(a -> {
+                instance.executeTimedAsync(() -> displayActionBar(a), a.getFrequency(), a.getFrequency() * 20, false);
+            });
+    	}
 
         // Start scheduler for Chats
-        chats.values().forEach(c -> {
-            instance.executeTimedAsync(() -> displayChat(c), c.getFrequency(), c.getFrequency() * 20, false);
-        });
+        if(!chats.isEmpty()) {
+        	chats.values().forEach(c -> {
+                instance.executeTimedAsync(() -> displayChat(c), c.getFrequency(), c.getFrequency() * 20, false);
+            });
+        }
     }
 
     /**

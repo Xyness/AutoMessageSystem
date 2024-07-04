@@ -14,7 +14,7 @@ public class bStatsHook {
 	
 	
 	/** The Metrics instance for bStats integration. */
-	public static Metrics metrics;
+	public Metrics metrics;
 	
 	
 	// ********************
@@ -27,7 +27,7 @@ public class bStatsHook {
 	 *
 	 * @param plugin the JavaPlugin instance.
 	 */
-	public static void enableMetrics(JavaPlugin plugin) {
+	public void enableMetrics(JavaPlugin plugin) {
 	    int pluginId = 22487;
 	    metrics = new Metrics(plugin, pluginId);
 	}
