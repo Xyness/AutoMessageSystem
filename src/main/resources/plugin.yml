@@ -1,9 +1,9 @@
 name: AutoMessageSystem
-version: 1.0.2
+version: 1.0.3
 main: fr.xyness.AMS.AutoMessageSystem
 authors: [Xyness]
 soft-depend: [PlaceholderAPI]
-api-version: 1.20
+api-version: 1.18
 folia-supported: true
 commands:
   ams:

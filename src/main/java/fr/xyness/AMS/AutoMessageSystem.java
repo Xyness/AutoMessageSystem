@@ -54,7 +54,7 @@ public class AutoMessageSystem extends JavaPlugin {
     private bStatsHook bStatsInstance;
     
     /** The version of the plugin */
-    final private String Version = "1.0.2";
+    final private String Version = "1.0.3";
 	
     /** Whether the server is using Folia */
     private boolean isFolia = false;
