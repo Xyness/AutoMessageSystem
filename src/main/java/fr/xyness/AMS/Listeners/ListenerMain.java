@@ -1,5 +1,8 @@
 package fr.xyness.AMS.Listeners;
 
+import java.util.UUID;
+
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -38,9 +41,9 @@ public class ListenerMain implements Listener {
     }
     
     
-    // ********************
-    // *  Others methods  *
-    // ********************
+    // *******************
+    // *  Other methods  *
+    // *******************
 
     
     /**
@@ -52,7 +55,15 @@ public class ListenerMain implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         instance.executeAsync(() -> {
-            instance.getUtils().loadPlayerBossBars(event.getPlayer());
+        	Player player = event.getPlayer();
+        	UUID playerId = player.getUniqueId();
+        	if(!instance.getPlayersUtils().isPlayerOptions(playerId)) {
+        		if(instance.getPlayersUtils().insertPlayer(playerId, player.getName())) {
+        			instance.getUtils().loadPlayerBossBars(player);
+        		}
+        	} else if (instance.getPlayersUtils().getPlayerOption(playerId, "bossbar")){
+        		instance.getUtils().loadPlayerBossBars(player);
+        	}
         });
     }
 
@@ -64,8 +75,6 @@ public class ListenerMain implements Listener {
      */
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        instance.executeAsync(() -> {
-            instance.getUtils().unloadPlayerBossBars(event.getPlayer());
-        });
+        instance.executeAsync(() -> instance.getUtils().unloadPlayerBossBars(event.getPlayer()));
     }
 }

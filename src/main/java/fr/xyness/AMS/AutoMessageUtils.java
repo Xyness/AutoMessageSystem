@@ -114,20 +114,23 @@ public class AutoMessageUtils {
     	actionBars.clear();
     	chats.clear();
     	disabledWorlds.clear();
-    	bossBarsBukkitTasks.values().forEach(t -> t.cancel());
-    	bossBarsBukkitTasks.clear();
-    	bossBarsScheduledTasks.values().forEach(t -> t.cancel());
-    	bossBarsScheduledTasks.clear();
-    	actionBarsBukkitTasks.values().forEach(t -> t.cancel());
-    	actionBarsBukkitTasks.clear();
-    	actionBarsScheduledTasks.values().forEach(t -> t.cancel());
-    	actionBarsScheduledTasks.clear();
-    	titleBukkitTasks.values().forEach(t -> t.cancel());
-    	titleBukkitTasks.clear();
-    	titleScheduledTasks.values().forEach(t -> t.cancel());
-    	titleScheduledTasks.clear();
     	playersBossBars.keySet().forEach(v -> playersBossBars.get(v).values().forEach(b -> b.setVisible(false)));
     	playersBossBars.clear();
+    	if(instance.isFolia()) {
+        	bossBarsScheduledTasks.values().forEach(t -> t.cancel());
+        	bossBarsScheduledTasks.clear();
+        	actionBarsScheduledTasks.values().forEach(t -> t.cancel());
+        	actionBarsScheduledTasks.clear();
+        	titleScheduledTasks.values().forEach(t -> t.cancel());
+        	titleScheduledTasks.clear();
+    	} else {
+        	bossBarsBukkitTasks.values().forEach(t -> t.cancel());
+        	bossBarsBukkitTasks.clear();
+        	actionBarsBukkitTasks.values().forEach(t -> t.cancel());
+        	actionBarsBukkitTasks.clear();
+        	titleBukkitTasks.values().forEach(t -> t.cancel());
+        	titleBukkitTasks.clear();
+    	}
     }
 
     /**
@@ -210,6 +213,18 @@ public class AutoMessageUtils {
     		playersBossBars.get(b).remove(player);
     	});
     }
+    
+    /**
+     * Unloads and disables all bossbars for a player
+     * 
+     * @param player The target player
+     */
+    public void unloadAndDisablePlayerBossBars(Player player) {
+    	bossBars.values().forEach(b -> {
+    		playersBossBars.get(b).get(player).setVisible(false);
+    		playersBossBars.get(b).remove(player);
+    	});
+    }
 
     /**
      * Starts the scheduler for all types of messages (BossBar, Title, ActionBar, Chat).
@@ -261,16 +276,14 @@ public class AutoMessageUtils {
         boolean progressive_reverse = bossbar.getProgressiveReverse().get(index);
 
         // Setup for players
-        Map<Player,BossBar> bossBars = playersBossBars.get(bossbar);
-        bossBars.keySet().forEach(p -> {
+        Map<Player, BossBar> bossBars = playersBossBars.get(bossbar);
+        bossBars.forEach((p, bossBar) -> {
             if (!disabledWorlds.contains(p.getWorld().getName())) {
-            	BossBar bossBar = bossBars.get(p);
-            	bossBar.setColor(barColor);
-            	bossBar.setStyle(barStyle);
-            	bossBar.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title);
-            	bossBar.setProgress(progressive_reverse ? 0 : 1);
+                bossBar.setColor(barColor);
+                bossBar.setStyle(barStyle);
+                bossBar.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title);
+                bossBar.setProgress(progressive_reverse ? 0 : 1);
                 bossBar.setVisible(true);
-                bossBars.put(p, bossBar);
             }
         });
 
@@ -287,17 +300,15 @@ public class AutoMessageUtils {
                 counter[0]--;
                 if (progressive) {
                     double progress = progressive_reverse ? (display_time - counter[0]) / (double) display_time : counter[0] / (double) display_time;
-                    bossBars.keySet().forEach(p -> {
-                    	BossBar b = bossBars.get(p);
+                    bossBars.forEach((p, b) -> {
                     	instance.executeEntitySync(p, () -> {
                         	b.setProgress(progress);
                         	b.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title);
                     	});
                     });
                 } else {
-                    bossBars.keySet().forEach(p -> {
-                    	BossBar b = bossBars.get(p);
-                    	instance.executeEntitySync(p, () -> b.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title));
+                	bossBars.forEach((p, b) -> {
+                		instance.executeEntitySync(p, () -> b.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title));
                     });
                 }
             }
@@ -366,13 +377,13 @@ public class AutoMessageUtils {
         	if(first[0]) {
                 if(instance.isPAPI()) {
                     Bukkit.getOnlinePlayers().forEach(p -> {
-                        if (!disabledWorlds.contains(p.getWorld().getName())) {
+                        if (!disabledWorlds.contains(p.getWorld().getName()) && instance.getPlayersUtils().getPlayerOption(p.getUniqueId(), "title")) {
                         	instance.executeEntitySync(p, () -> p.sendTitle(PlaceholderAPI.setPlaceholders(p, mainTitle), PlaceholderAPI.setPlaceholders(p, subTitle), fade_in, 5, fade_out));
                         }
                     });	
                 } else {
                     Bukkit.getOnlinePlayers().forEach(p -> {
-                        if (!disabledWorlds.contains(p.getWorld().getName())) {
+                        if (!disabledWorlds.contains(p.getWorld().getName()) && instance.getPlayersUtils().getPlayerOption(p.getUniqueId(), "title")) {
                         	instance.executeEntitySync(p, () -> p.sendTitle(mainTitle, subTitle, fade_in, 5, fade_out));
                         }
                     });
@@ -381,13 +392,13 @@ public class AutoMessageUtils {
         	} else {
                 if(instance.isPAPI()) {
                     Bukkit.getOnlinePlayers().forEach(p -> {
-                        if (!disabledWorlds.contains(p.getWorld().getName())) {
+                        if (!disabledWorlds.contains(p.getWorld().getName()) && instance.getPlayersUtils().getPlayerOption(p.getUniqueId(), "title")) {
                         	instance.executeEntitySync(p, () -> p.sendTitle(PlaceholderAPI.setPlaceholders(p, mainTitle), PlaceholderAPI.setPlaceholders(p, subTitle), 0, 5, fade_out));
                         }
                     });	
                 } else {
                     Bukkit.getOnlinePlayers().forEach(p -> {
-                        if (!disabledWorlds.contains(p.getWorld().getName())) {
+                        if (!disabledWorlds.contains(p.getWorld().getName()) && instance.getPlayersUtils().getPlayerOption(p.getUniqueId(), "title")) {
                         	instance.executeEntitySync(p, () -> p.sendTitle(mainTitle, subTitle, 0, 5, fade_out));
                         }
                     });
@@ -462,13 +473,13 @@ public class AutoMessageUtils {
         Runnable aTask = () -> {
             if(instance.isPAPI()) {
             	Bukkit.getOnlinePlayers().forEach(p -> {
-                    if (!disabledWorlds.contains(p.getWorld().getName())) {
+                    if (!disabledWorlds.contains(p.getWorld().getName()) && instance.getPlayersUtils().getPlayerOption(p.getUniqueId(), "actionbar")) {
                         instance.executeEntitySync(p, () -> p.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(PlaceholderAPI.setPlaceholders(p, message))));
                     }
                 });
             } else {
             	Bukkit.getOnlinePlayers().forEach(p -> {
-                    if (!disabledWorlds.contains(p.getWorld().getName())) {
+                    if (!disabledWorlds.contains(p.getWorld().getName()) && instance.getPlayersUtils().getPlayerOption(p.getUniqueId(), "actionbar")) {
                         instance.executeEntitySync(p, () -> p.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(message)));
                     }
                 });
@@ -538,13 +549,13 @@ public class AutoMessageUtils {
         // Display chat message
         if(instance.isPAPI()) {
             Bukkit.getOnlinePlayers().forEach(p -> {
-                if (!disabledWorlds.contains(p.getWorld().getName())) {
+                if (!disabledWorlds.contains(p.getWorld().getName()) && instance.getPlayersUtils().getPlayerOption(p.getUniqueId(), "chat")) {
                     p.sendMessage(PlaceholderAPI.setPlaceholders(p, message));
                 }
             });
         } else {
             Bukkit.getOnlinePlayers().forEach(p -> {
-                if (!disabledWorlds.contains(p.getWorld().getName())) {
+                if (!disabledWorlds.contains(p.getWorld().getName()) && instance.getPlayersUtils().getPlayerOption(p.getUniqueId(), "chat")) {
                     p.sendMessage(message);
                 }
             });

@@ -6,10 +6,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
@@ -23,7 +31,11 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import fr.xyness.AMS.Commands.MainCommand;
+import fr.xyness.AMS.Commands.ToggleCommand;
 import fr.xyness.AMS.Listeners.ListenerMain;
 import fr.xyness.AMS.Support.bStatsHook;
 import fr.xyness.AMS.Types.ActionBarMessage;
@@ -31,6 +43,7 @@ import fr.xyness.AMS.Types.BossBarMessage;
 import fr.xyness.AMS.Types.ChatMessage;
 import fr.xyness.AMS.Types.TitleMessage;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import net.md_5.bungee.api.ChatColor;
 
 /**
  * Main class to enable AutoMessageSystem
@@ -50,11 +63,14 @@ public class AutoMessageSystem extends JavaPlugin {
     /** The AutoMessageUtils instance */
     private AutoMessageUtils utils;
     
+    /** The PlayersUtils instance */
+    private PlayersUtils playersUtils;
+    
     /** Instance of ClaimbStats for bStats integration */
     private bStatsHook bStatsInstance;
     
     /** The version of the plugin */
-    final private String Version = "1.0.3";
+    final private String Version = "1.0.4";
 	
     /** Whether the server is using Folia */
     private boolean isFolia = false;
@@ -73,6 +89,9 @@ public class AutoMessageSystem extends JavaPlugin {
     
     /** Set of all ScheduledTasks of the plugin */
     private Set<ScheduledTask> scheduledTasks = new HashSet<>();
+    
+    /** Data source for database connections */
+    private HikariDataSource dataSource;
 	
     
     // ******************
@@ -131,10 +150,13 @@ public class AutoMessageSystem extends JavaPlugin {
         
         // Check for updates
         isUpdateAvailable = checkForUpdates();
+        
         // Update the config if needed
         updateConfigWithDefaults();
+        
         // Check if the server is running Folia
         checkFolia();
+        
         // Unregister all handlers, schedulers and data
         HandlerList.unregisterAll(plugin);
         if(reload) {
@@ -151,6 +173,79 @@ public class AutoMessageSystem extends JavaPlugin {
         
         // Register new instance
         if (!reload) utils = new AutoMessageUtils(this);
+        
+        // Register new instance
+        if (!reload) playersUtils = new PlayersUtils(this);
+        
+        // Check database for options
+        HikariConfig configH = new HikariConfig();
+        configH.setJdbcUrl("jdbc:sqlite:plugins/AutoMessageSystem/players.db");
+        configH.addDataSourceProperty("cachePrepStmts", "true");
+        configH.addDataSourceProperty("prepStmtCacheSize", "250");
+        configH.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        configH.setPoolName("SQLitePool");
+        configH.setMaximumPoolSize(10);
+        configH.setMinimumIdle(2);
+        configH.setIdleTimeout(60000);
+        configH.setMaxLifetime(600000);
+        dataSource = new HikariDataSource(configH);
+        try (Connection connection = dataSource.getConnection()) {
+        	
+        	// Create tables if necessary
+            try (Statement stmt = connection.createStatement()) {
+                String sql = "CREATE TABLE IF NOT EXISTS ams_players " +
+                        "(id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        "uuid VARCHAR(36) NOT NULL UNIQUE, " +
+                        "playername VARCHAR(36) NOT NULL, " +
+                        "bossbar TINYINT(1) DEFAULT 1, " +
+                        "title TINYINT(1) DEFAULT 1, " +
+                        "actionbar TINYINT(1) DEFAULT 1, " +
+                        "chat TINYINT(1) DEFAULT 1)";
+                stmt.executeUpdate(sql);
+            } catch (SQLException e) {
+                getLogger().severe("Error creating tables, disabling plugin.");
+                return false;
+            }
+            
+            // Load players data
+            int i = 0;
+            int max_i = 0;
+            String getQuery = "SELECT * FROM ams_players";
+            try (PreparedStatement stat = connection.prepareStatement(getQuery);
+                    ResultSet resultSet = stat.executeQuery()) {
+            	while(resultSet.next()) {
+            		max_i++;
+                	UUID uuid = null;
+                	String uuidString = resultSet.getString("uuid");
+                	try {
+                		uuid = UUID.fromString(uuidString);
+                	} catch (IllegalArgumentException e) {
+                		getLogger().severe("Error when loading UUID for the player '" + resultSet.getString("playername") + "'.");
+                	}
+                	if(uuid != null) {
+                		Map<String,Boolean> options = new HashMap<>();
+                		Boolean bossbar = resultSet.getBoolean("bossbar");
+                		Boolean title = resultSet.getBoolean("title");
+                		Boolean actionbar = resultSet.getBoolean("actionbar");
+                		Boolean chat = resultSet.getBoolean("chat");
+                		options.put("bossbar", bossbar);
+                		options.put("title", title);
+                		options.put("actionbar", actionbar);
+                		options.put("chat", chat);
+                		playersUtils.addPlayerOptions(uuid, options);
+                		i++;
+                	}
+            	}
+            	getLogger().info(String.valueOf(i)+"/"+String.valueOf(max_i)+" loaded players.");
+            } catch (SQLException e) {
+            	getLogger().severe("Error loading players, disabling plugin.");
+                return false;
+            }
+            
+        } catch (SQLException e) {
+        	getLogger().severe("Error connecting to database, disabling plugin.");
+            return false;
+        }
         
         // Loading disabled worlds
         Set<String> worlds = new HashSet<>(plugin.getConfig().getStringList("disabled-worlds"));
@@ -172,7 +267,7 @@ public class AutoMessageSystem extends JavaPlugin {
             String enabled = getConfig().getString(path + key + ".enabled");
 
             if (titles.isEmpty() || colors.isEmpty() || styles.isEmpty() || progressives.isEmpty() || progressives_reverse.isEmpty() || frequency == null || enabled == null || displays_time.isEmpty()) {
-                getLogger().info("The BossBar '" + key + "' is not configured correctly.");
+                getLogger().severe("The BossBar '" + key + "' is not configured correctly.");
                 continue;
             }
             
@@ -182,7 +277,7 @@ public class AutoMessageSystem extends JavaPlugin {
             		continue;
             	}
             } else {
-                getLogger().info("The BossBar '" + key + "' is not configured correctly.");
+                getLogger().severe("The BossBar '" + key + "' is not configured correctly.");
                 continue;
             }
             
@@ -193,14 +288,14 @@ public class AutoMessageSystem extends JavaPlugin {
             List<Boolean> progressives_reverse_final = convertToBooleans(progressives_reverse,key,"progressives-reverse");
             List<Integer> displays_time_final = convertToIntegers(displays_time,key,"displays-time","BossBar");
             if(colors_final == null || styles_final == null || progressives_final == null || progressives_reverse_final == null || displays_time_final == null) {
-                getLogger().info("The BossBar '" + key + "' is not configured correctly.");
+                getLogger().severe("The BossBar '" + key + "' is not configured correctly.");
                 continue;
             }
             
             // Frequency check
             int frequencySeconds = utils.convertTimeToSeconds(frequency);
             if (frequencySeconds < 0) {
-                getLogger().info("The BossBar '" + key + "' is not configured correctly. Bad setting for 'frequency'.");
+                getLogger().severe("The BossBar '" + key + "' is not configured correctly. Bad setting for 'frequency'.");
                 continue;
             }
 
@@ -223,7 +318,7 @@ public class AutoMessageSystem extends JavaPlugin {
         	String frequency = plugin.getConfig().getString(path+key+".frequency");
         	String enabled = getConfig().getString(path + key + ".enabled");
         	if(titless.isEmpty() || subtitles.isEmpty() || frequency == null || displays_time.isEmpty() || fades_in.isEmpty() || fades_out.isEmpty() || enabled == null) {
-        		getLogger().info("The Title '"+key+"' is not configured correctly.");
+        		getLogger().severe("The Title '"+key+"' is not configured correctly.");
         		continue;
         	}
         	
@@ -233,7 +328,7 @@ public class AutoMessageSystem extends JavaPlugin {
             		continue;
             	}
             } else {
-                getLogger().info("The Title '" + key + "' is not configured correctly.");
+                getLogger().severe("The Title '" + key + "' is not configured correctly.");
                 continue;
             }
         	
@@ -242,14 +337,14 @@ public class AutoMessageSystem extends JavaPlugin {
         	List<Integer> fades_in_final = convertToIntegers(fades_in,key,"fades-in","Title");
         	List<Integer> fades_out_final = convertToIntegers(fades_out,key,"fades-out","Title");
         	if(displays_time_final == null || fades_in_final == null || fades_out_final == null) {
-                getLogger().info("The Title '" + key + "' is not configured correctly.");
+                getLogger().severe("The Title '" + key + "' is not configured correctly.");
                 continue;
         	}
         	
         	// Frequency check
         	int frequencySeconds = utils.convertTimeToSeconds(frequency);
         	if(frequencySeconds < 0) {
-        		getLogger().info("The Title '"+key+"' is not configured correctly. Bad setting for 'frequency'.");
+        		getLogger().severe("The Title '"+key+"' is not configured correctly. Bad setting for 'frequency'.");
         		continue;
         	}
         	
@@ -269,7 +364,7 @@ public class AutoMessageSystem extends JavaPlugin {
         	String frequency = plugin.getConfig().getString(path+key+".frequency");
         	String enabled = getConfig().getString(path + key + ".enabled");
         	if(messages.isEmpty() || frequency == null || displays_time.isEmpty() || enabled == null) {
-        		getLogger().info("The ActionBar '"+key+"' is not configured correctly.");
+        		getLogger().severe("The ActionBar '"+key+"' is not configured correctly.");
         		continue;
         	}
         	
@@ -279,21 +374,21 @@ public class AutoMessageSystem extends JavaPlugin {
             		continue;
             	}
             } else {
-                getLogger().info("The ActionBar '" + key + "' is not configured correctly.");
+                getLogger().severe("The ActionBar '" + key + "' is not configured correctly.");
                 continue;
             }
         	
         	// Conversion
         	List<Integer> displays_time_final = convertToIntegers(displays_time,key,"displays-time","ActionBar");
         	if(displays_time_final == null) {
-                getLogger().info("The ActionBar '" + key + "' is not configured correctly.");
+                getLogger().severe("The ActionBar '" + key + "' is not configured correctly.");
                 continue;
         	}
         	
         	// Frequency check
         	int frequencySeconds = utils.convertTimeToSeconds(frequency);
         	if(frequencySeconds < 0) {
-        		getLogger().info("The ActionBar '"+key+"' is not configured correctly. Bad setting for 'frequency'.");
+        		getLogger().severe("The ActionBar '"+key+"' is not configured correctly. Bad setting for 'frequency'.");
         		continue;
         	}
         	
@@ -312,7 +407,7 @@ public class AutoMessageSystem extends JavaPlugin {
         	String frequency = plugin.getConfig().getString(path+key+".frequency");
         	String enabled = getConfig().getString(path + key + ".enabled");
         	if(message == null || frequency == null || enabled == null) {
-        		getLogger().info("The Chat '"+key+"' is not configured correctly.");
+        		getLogger().severe("The Chat '"+key+"' is not configured correctly.");
         		continue;
         	}
         	
@@ -322,14 +417,14 @@ public class AutoMessageSystem extends JavaPlugin {
             		continue;
             	}
             } else {
-                getLogger().info("The Chat '" + key + "' is not configured correctly.");
+                getLogger().severe("The Chat '" + key + "' is not configured correctly.");
                 continue;
             }
         	
         	// Frequency check
         	int frequencySeconds = utils.convertTimeToSeconds(frequency);
         	if(frequencySeconds < 0) {
-        		getLogger().info("The Chat '"+key+"' is not configured correctly. Bad setting for 'frequency'.");
+        		getLogger().severe("The Chat '"+key+"' is not configured correctly. Bad setting for 'frequency'.");
         		continue;
         	}
         	
@@ -347,8 +442,9 @@ public class AutoMessageSystem extends JavaPlugin {
         // Setup schedulers
         utils.startScheduler();
         
-        // Register command
+        // Register commands
         getCommand("ams").setExecutor(new MainCommand(this));
+        getCommand("toggle").setExecutor(new ToggleCommand(this));
         
         // Register listener
         getServer().getPluginManager().registerEvents(new ListenerMain(this), plugin);
@@ -472,6 +568,20 @@ public class AutoMessageSystem extends JavaPlugin {
      * @return The Utils instance
      */
     public AutoMessageUtils getUtils() { return utils; }
+    
+    /**
+     * Returns the PlayersUtils instance
+     * 
+     * @return The PlayersUtils instance
+     */
+    public PlayersUtils getPlayersUtils() { return playersUtils; }
+    
+    /**
+     * Returns the data source for database connections.
+     * 
+     * @return The data source
+     */
+    public HikariDataSource getDataSource() { return dataSource; }
     
     /**
      * Returns the update message.
