@@ -2,6 +2,9 @@
 # *  General settings  *
 # **********************
 
+# The language file
+lang: "en_US.yml"
+
 # World where the auto-messages are disabled
 disabled-worlds:
 - example_world

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -66,11 +67,14 @@ public class AutoMessageSystem extends JavaPlugin {
     /** The PlayersUtils instance */
     private PlayersUtils playersUtils;
     
+    /** The LanguageSystem instance */
+    private LanguageSystem languageSystem;
+    
     /** Instance of ClaimbStats for bStats integration */
     private bStatsHook bStatsInstance;
     
     /** The version of the plugin */
-    final private String Version = "1.0.4";
+    final private String Version = "1.0.5";
 	
     /** Whether the server is using Folia */
     private boolean isFolia = false;
@@ -176,6 +180,33 @@ public class AutoMessageSystem extends JavaPlugin {
         
         // Register new instance
         if (!reload) playersUtils = new PlayersUtils(this);
+        
+        // Register new instance
+        if (!reload) languageSystem = new LanguageSystem(this);
+        
+        // Check default language file for additions
+        checkAndSaveResource("langs/en_US.yml");
+        updateLangFileWithMissingKeys("en_US.yml");
+        
+        // Check custom language file
+        String lang = plugin.getConfig().getString("lang");
+        File custom = new File(plugin.getDataFolder() + File.separator + "langs", lang);
+        if (!custom.exists()) {
+            getLogger().severe("File '" + lang + "' not found, using en_US.yml");
+            lang = "en_US.yml";
+        } else {
+            updateLangFileWithMissingKeys(lang);
+        }
+        
+        // Load selected language file
+        File lang_final = new File(plugin.getDataFolder() + File.separator + "langs", lang);
+        FileConfiguration config = YamlConfiguration.loadConfiguration(lang_final);
+        Map<String, String> m = new HashMap<>();
+        for (String key : config.getKeys(false)) {
+            String value = config.getString(key);
+            m.put(key, value);
+        }
+        languageSystem.setLanguage(m);
         
         // Check database for options
         HikariConfig configH = new HikariConfig();
@@ -539,7 +570,59 @@ public class AutoMessageSystem extends JavaPlugin {
         }
         return list;
     }
+    
+    /**
+     * Checks and saves a resource file if it does not exist.
+     * 
+     * @param plugin The plugin instance
+     * @param resource The resource file to check and save
+     */
+    private void checkAndSaveResource(String resource) {
+        File file = new File(plugin.getDataFolder() + File.separator + resource);
+        if (!file.exists()) {
+            file.getParentFile().mkdirs();
+            plugin.saveResource(resource, false);
+        }
+    }
 
+    /**
+     * Updates the language file with missing keys and removes obsolete keys.
+     * 
+     * @param plugin The plugin instance
+     * @param file The language file to update
+     */
+    private void updateLangFileWithMissingKeys(String file) {
+        try {
+            InputStream defLangStream = plugin.getClass().getClassLoader().getResourceAsStream("langs/en_US.yml");
+            if (defLangStream == null) return;
+            FileConfiguration defConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(defLangStream, StandardCharsets.UTF_8));
+            File langFile = new File(plugin.getDataFolder() + File.separator + "langs", file);
+            if (!langFile.exists()) return;
+            FileConfiguration customConfig = YamlConfiguration.loadConfiguration(langFile);
+            boolean needSave = false;
+
+            // Add missing keys
+            for (String key : defConfig.getKeys(true)) {
+                if (!customConfig.contains(key)) {
+                    customConfig.set(key, defConfig.get(key));
+                    needSave = true;
+                }
+            }
+
+            // Remove obsolete keys
+            Set<String> customConfigKeys = new HashSet<>(customConfig.getKeys(true));
+            for (String key : customConfigKeys) {
+                if (!defConfig.contains(key)) {
+                    customConfig.set(key, null);
+                    needSave = true;
+                }
+            }
+
+            if (needSave) customConfig.save(langFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     
     /**
      * Checks if the server is using Folia.
@@ -575,6 +658,13 @@ public class AutoMessageSystem extends JavaPlugin {
      * @return The PlayersUtils instance
      */
     public PlayersUtils getPlayersUtils() { return playersUtils; }
+    
+    /**
+     * Returns the LanguageSystem instance
+     * 
+     * @return The LanguageSystem instance
+     */
+    public LanguageSystem getLanguageSystem() { return languageSystem; }
     
     /**
      * Returns the data source for database connections.

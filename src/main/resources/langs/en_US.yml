@@ -1,0 +1,24 @@
+# ***********************
+# *  Language settings  *
+# ***********************
+
+bossbars-toggle-off: "§cBossBars disabled."
+bossbars-toggle-on: "§aBossBars enabled."
+
+titles-toggle-off: "§cTitles disabled."
+titles-toggle-on: "§cTitles enabled."
+
+actionbars-toggle-off: "§cActionBars disabled."
+actionbars-toggle-on: "§aActionBars enabled."
+
+chats-toggle-off: "§cChats disabled."
+chats-toggle-on: "§aChats enabled."
+
+toggle-command-wrong-arguments: |
+  §cWrong argument. Available arguments :
+  §obossbars, titles, actionbars and chats§r§c.
+  
+toggle-command-syntax: |
+  §cSyntax : /toggle <argument>
+  §cAvailable arguments :
+  §obossbars, titles, actionbars and chats§r§c.

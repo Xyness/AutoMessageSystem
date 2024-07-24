@@ -66,7 +66,7 @@ public class ToggleCommand implements CommandExecutor, TabCompleter {
             List<String> completions = new ArrayList<>();
             
             if(args.length == 1) {
-            	completions.addAll(Set.of("bossbar","title","actionbar","chat"));
+            	completions.addAll(Set.of("bossbars","titles","actionbars","chats"));
             	return completions;
             }
             
@@ -111,63 +111,60 @@ public class ToggleCommand implements CommandExecutor, TabCompleter {
     	if(arg_length == 1) {
     		String arg = args[0];
     		switch(arg) {
-	    		case "bossbar":
+	    		case "bossbars":
 	    			if(instance.getPlayersUtils().getPlayerOption(playerId, "bossbar")) {
 	    				instance.getPlayersUtils().setPlayerOption(playerId, "bossbar", false);
 	    				instance.getPlayersUtils().setPlayerOptionInDatabase(playerId, "bossbar", false);
 	    				instance.getUtils().unloadAndDisablePlayerBossBars(player);
-	    				player.sendMessage("§cBossBars disabled.");
+	    				player.sendMessage(instance.getLanguageSystem().getMessage("bossbars-toggle-off"));
 	    			} else {
 	    				instance.getPlayersUtils().setPlayerOption(playerId, "bossbar", true);
 	    				instance.getPlayersUtils().setPlayerOptionInDatabase(playerId, "bossbar", true);
 	    				instance.getUtils().loadPlayerBossBars(player);
-	    				player.sendMessage("§aBossBars enabled.");
+	    				player.sendMessage(instance.getLanguageSystem().getMessage("bossbars-toggle-on"));
 	    			}
 	    			break;
-	    		case "title":
+	    		case "titles":
 	    			if(instance.getPlayersUtils().getPlayerOption(playerId, "title")) {
 	    				instance.getPlayersUtils().setPlayerOption(playerId, "title", false);
 	    				instance.getPlayersUtils().setPlayerOptionInDatabase(playerId, "title", false);
-	    				player.sendMessage("§cTitles disabled.");
+	    				player.sendMessage(instance.getLanguageSystem().getMessage("titles-toggle-off"));
 	    			} else {
 	    				instance.getPlayersUtils().setPlayerOption(playerId, "title", true);
 	    				instance.getPlayersUtils().setPlayerOptionInDatabase(playerId, "title", true);
-	    				player.sendMessage("§aTitles enabled.");
+	    				player.sendMessage(instance.getLanguageSystem().getMessage("titles-toggle-on"));
 	    			}
 	    			break;
-	    		case "actionbar":
+	    		case "actionbars":
 	    			if(instance.getPlayersUtils().getPlayerOption(playerId, "actionbar")) {
 	    				instance.getPlayersUtils().setPlayerOption(playerId, "actionbar", false);
 	    				instance.getPlayersUtils().setPlayerOptionInDatabase(playerId, "actionbar", false);
-	    				player.sendMessage("§cActionBars disabled.");
+	    				player.sendMessage(instance.getLanguageSystem().getMessage("actionbars-toggle-off"));
 	    			} else {
 	    				instance.getPlayersUtils().setPlayerOption(playerId, "actionbar", true);
 	    				instance.getPlayersUtils().setPlayerOptionInDatabase(playerId, "actionbar", true);
-	    				player.sendMessage("§aActionBars enabled.");
+	    				player.sendMessage(instance.getLanguageSystem().getMessage("actionbars-toggle-on"));
 	    			}
 	    			break;
-	    		case "chat":
+	    		case "chats":
 	    			if(instance.getPlayersUtils().getPlayerOption(playerId, "chat")) {
 	    				instance.getPlayersUtils().setPlayerOption(playerId, "chat", false);
 	    				instance.getPlayersUtils().setPlayerOptionInDatabase(playerId, "chat", false);
-	    				player.sendMessage("§cChats disabled.");
+	    				player.sendMessage(instance.getLanguageSystem().getMessage("chats-toggle-off"));
 	    			} else {
 	    				instance.getPlayersUtils().setPlayerOption(playerId, "chat", true);
 	    				instance.getPlayersUtils().setPlayerOptionInDatabase(playerId, "chat", true);
-	    				player.sendMessage("§aChats enabled.");
+	    				player.sendMessage(instance.getLanguageSystem().getMessage("chats-toggle-on"));
 	    			}
 	    			break;
 	    		default:
-	    			sender.sendMessage("§cWrong argument. Available arguments :\n"
-	    					+ "§obossbar, title, actionbar and chat§r§c.");
+	    			sender.sendMessage(instance.getLanguageSystem().getMessage("toggle-command-wrong-arguments"));
 	    			break;
     		}
     		return true;
     	}
     	
-		sender.sendMessage("§cSyntax /disable <argument>\n"
-				+ "Available arguments :\n"
-				+ "§obossbar, title, actionbar and chat§r§c.");
+    	sender.sendMessage(instance.getLanguageSystem().getMessage("toggle-command-syntax"));
     	return true;
     }
 }
