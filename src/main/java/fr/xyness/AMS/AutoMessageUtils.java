@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,40 +41,40 @@ public class AutoMessageUtils {
     private AutoMessageSystem instance;
 
     /** Stores BossBarMessage objects mapped by their names. */
-    private Map<String, BossBarMessage> bossBars = new HashMap<>();
+    private Map<String, BossBarMessage> bossBars = new ConcurrentHashMap<>();
 
     /** Stores TitleMessage objects mapped by their names. */
-    private Map<String, TitleMessage> titles = new HashMap<>();
+    private Map<String, TitleMessage> titles = new ConcurrentHashMap<>();
 
     /** Stores ActionBarMessage objects mapped by their names. */
-    private Map<String, ActionBarMessage> actionBars = new HashMap<>();
+    private Map<String, ActionBarMessage> actionBars = new ConcurrentHashMap<>();
 
     /** Stores ChatMessage objects mapped by their names. */
-    private Map<String, ChatMessage> chats = new HashMap<>();
+    private Map<String, ChatMessage> chats = new ConcurrentHashMap<>();
 
     /** Stores the names of worlds where messages are disabled. */
     private Set<String> disabledWorlds = new HashSet<>();
 
     /** Maps BossBarMessage to their corresponding BukkitTask. */
-    private Map<BossBarMessage, BukkitTask> bossBarsBukkitTasks = new HashMap<>();
+    private Map<BossBarMessage, BukkitTask> bossBarsBukkitTasks = new ConcurrentHashMap<>();
 
     /** Maps BossBarMessage to their corresponding ScheduledTask. */
-    private Map<BossBarMessage, ScheduledTask> bossBarsScheduledTasks = new HashMap<>();
+    private Map<BossBarMessage, ScheduledTask> bossBarsScheduledTasks = new ConcurrentHashMap<>();
 
     /** Maps ActionBarMessage to their corresponding BukkitTask. */
-    private Map<ActionBarMessage, BukkitTask> actionBarsBukkitTasks = new HashMap<>();
+    private Map<ActionBarMessage, BukkitTask> actionBarsBukkitTasks = new ConcurrentHashMap<>();
 
     /** Maps ActionBarMessage to their corresponding ScheduledTask. */
-    private Map<ActionBarMessage, ScheduledTask> actionBarsScheduledTasks = new HashMap<>();
+    private Map<ActionBarMessage, ScheduledTask> actionBarsScheduledTasks = new ConcurrentHashMap<>();
     
     /** Maps TitleMessage to their corresponding BukkitTask. */
-    private Map<TitleMessage, BukkitTask> titleBukkitTasks = new HashMap<>();
+    private Map<TitleMessage, BukkitTask> titleBukkitTasks = new ConcurrentHashMap<>();
 
     /** Maps TitlerMessage to their corresponding ScheduledTask. */
-    private Map<TitleMessage, ScheduledTask> titleScheduledTasks = new HashMap<>();
+    private Map<TitleMessage, ScheduledTask> titleScheduledTasks = new ConcurrentHashMap<>();
     
     /** Maps BossBarMessage to their players with bossbar. */
-    private Map<BossBarMessage,Map<Player,BossBar>> playersBossBars = new HashMap<>();
+    private Map<BossBarMessage,Map<Player,BossBar>> playersBossBars = new ConcurrentHashMap<>();
 
     
     // ******************
@@ -276,9 +277,9 @@ public class AutoMessageUtils {
         boolean progressive_reverse = bossbar.getProgressiveReverse().get(index);
 
         // Setup for players
-        Map<Player, BossBar> bossBars = playersBossBars.get(bossbar);
+        Map<Player, BossBar> bossBars = new HashMap<>(playersBossBars.get(bossbar));
         bossBars.forEach((p, bossBar) -> {
-            if (!disabledWorlds.contains(p.getWorld().getName())) {
+            if (!disabledWorlds.contains(p.getWorld().getName()) && bossBar != null) {
                 bossBar.setColor(barColor);
                 bossBar.setStyle(barStyle);
                 bossBar.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title);
@@ -302,13 +303,19 @@ public class AutoMessageUtils {
                     double progress = progressive_reverse ? (display_time - counter[0]) / (double) display_time : counter[0] / (double) display_time;
                     bossBars.forEach((p, b) -> {
                     	instance.executeEntitySync(p, () -> {
-                        	b.setProgress(progress);
-                        	b.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title);
+                    		if(b != null) {
+	                        	b.setProgress(progress);
+	                        	b.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title);
+                    		}
                     	});
                     });
                 } else {
                 	bossBars.forEach((p, b) -> {
-                		instance.executeEntitySync(p, () -> b.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title));
+                		instance.executeEntitySync(p, () -> {
+                			if(b != null) {
+                				b.setTitle(instance.isPAPI() ? PlaceholderAPI.setPlaceholders(p, title) : title);
+                			}
+                		});
                     });
                 }
             }
@@ -324,7 +331,9 @@ public class AutoMessageUtils {
                 updateTask.run();
                 if (counter[0] <= 0) {
                 	task.cancel();
-                	bossBars.values().forEach(b -> b.setVisible(false));
+                	bossBars.values().forEach(b -> {
+                		if(b != null) b.setVisible(false);
+                	});
                 }
             }, 0, 100, TimeUnit.MILLISECONDS);
             bossBarsScheduledTasks.put(bossbar, foliaTask);
@@ -338,7 +347,9 @@ public class AutoMessageUtils {
                     updateTask.run();
                     if (counter[0] <= 0) {
                     	this.cancel();
-                    	bossBars.values().forEach(b -> b.setVisible(false));
+                    	bossBars.values().forEach(b -> {
+                    		if(b != null) b.setVisible(false);
+                    	});
                     }
                 }
             }.runTaskTimerAsynchronously(instance.getPlugin(), 0, 2);

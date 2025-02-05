@@ -74,7 +74,7 @@ public class AutoMessageSystem extends JavaPlugin {
     private bStatsHook bStatsInstance;
     
     /** The version of the plugin */
-    final private String Version = "1.0.5";
+    final private String Version = "1.0.6";
 	
     /** Whether the server is using Folia */
     private boolean isFolia = false;
@@ -164,8 +164,11 @@ public class AutoMessageSystem extends JavaPlugin {
         // Unregister all handlers, schedulers and data
         HandlerList.unregisterAll(plugin);
         if(reload) {
-        	bukkitTasks.forEach(task -> task.cancel());
-            scheduledTasks.forEach(task -> task.cancel());
+        	if(isFolia) {
+        		scheduledTasks.forEach(task -> task.cancel());
+        	} else {
+        		bukkitTasks.forEach(task -> task.cancel());
+        	}
             utils.clearData();
         } else {
         	bStatsInstance = new bStatsHook();
